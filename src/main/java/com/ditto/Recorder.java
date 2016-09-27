@@ -57,20 +57,24 @@ public class Recorder {
     private void setUpGetEndpoint() {
         get("/*", (req, res) -> {
             URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
-            Files.write(outputFile, (req.requestMethod() + " " + req.pathInfo() + " HTTP/1.1\r\n").getBytes("UTF-8"),
-                    StandardOpenOption.APPEND);
+            StringBuilder recordedMessage = new StringBuilder();
+            recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(" HTTP/1.1\r\n");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            addHeaders(req, conn);
-            writeBlankLine();
-            writeBlankLine();
+            addHeaders(req, conn, recordedMessage);
+            recordedMessage.append("\r\n\r\n");
+
             conn.setRequestMethod("GET");
             InputStream inputStream = conn.getInputStream();
             String responseBody = isToString(inputStream);
             Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
             String responseStatusLine = conn.getHeaderField(0);
 
-            writeResponse(responseBody, responseHeaders, responseStatusLine);
+            writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
             prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+            synchronized (this) {
+                Files.write(outputFile, recordedMessage.toString().getBytes("UTF-8"), StandardOpenOption.APPEND);
+            }
 
             return responseBody;
         });
@@ -79,20 +83,24 @@ public class Recorder {
     private void setUpHeadEndpoint() {
         head("/*", (req, res) -> {
             URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
-            Files.write(outputFile, (req.requestMethod() + " " + req.pathInfo() + " HTTP/1.1\r\n").getBytes("UTF-8"),
-                    StandardOpenOption.APPEND);
+            StringBuilder recordedMessage = new StringBuilder();
+            recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(" HTTP/1.1\r\n");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            addHeaders(req, conn);
-            writeBlankLine();
-            writeBlankLine();
+            addHeaders(req, conn, recordedMessage);
+            recordedMessage.append("\r\n\r\n");
+
             conn.setRequestMethod("HEAD");
             InputStream inputStream = conn.getInputStream();
             String responseBody = isToString(inputStream);
             Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
             String responseStatusLine = conn.getHeaderField(0);
 
-            writeResponse(responseBody, responseHeaders, responseStatusLine);
+            writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
             prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+            synchronized (this) {
+                Files.write(outputFile, recordedMessage.toString().getBytes("UTF-8"), StandardOpenOption.APPEND);
+            }
 
             return responseBody;
         });
@@ -101,20 +109,25 @@ public class Recorder {
     private void setUpDeleteEndpoint() {
         delete("/*", (req, res) -> {
             URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
-            Files.write(outputFile, (req.requestMethod() + " " + req.pathInfo() + " HTTP/1.1\r\n").getBytes("UTF-8"),
-                    StandardOpenOption.APPEND);
+            StringBuilder recordedMessage = new StringBuilder();
+            recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(" HTTP/1.1\r\n");
+
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            addHeaders(req, conn);
-            writeBlankLine();
-            writeBlankLine();
+            addHeaders(req, conn, recordedMessage);
+            recordedMessage.append("\r\n\r\n");
+
             conn.setRequestMethod("DELETE");
             InputStream inputStream = conn.getInputStream();
             String responseBody = isToString(inputStream);
             Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
             String responseStatusLine = conn.getHeaderField(0);
 
-            writeResponse(responseBody, responseHeaders, responseStatusLine);
+            writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
             prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+            synchronized (this) {
+                Files.write(outputFile, recordedMessage.toString().getBytes("UTF-8"), StandardOpenOption.APPEND);
+            }
 
             return responseBody;
         });
@@ -123,15 +136,14 @@ public class Recorder {
     private void setUpPostEndpoint() {
         post("/*", (req, res) -> {
             URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
-            Files.write(outputFile, (req.requestMethod() + " " + req.pathInfo() + " HTTP/1.1\r\n").getBytes("UTF-8"),
-                    StandardOpenOption.APPEND);
+            StringBuilder recordedMessage = new StringBuilder();
+            recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(" HTTP/1.1\r\n");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-            addHeaders(req, conn);
-            writeBlankLine();
-            Files.write(outputFile, (req.body() + "\r\n").getBytes("UTF-8"), StandardOpenOption.APPEND);
-            writeBlankLine();
-            writeBlankLine();
+            addHeaders(req, conn, recordedMessage);
+            recordedMessage.append("\r\n");
+            recordedMessage.append(req.body()).append("\r\n");
+            recordedMessage.append("\r\n\r\n");
 
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
@@ -142,8 +154,12 @@ public class Recorder {
             Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
             String responseStatusLine = conn.getHeaderField(0);
 
-            writeResponse(responseBody, responseHeaders, responseStatusLine);
+            writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
             prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+            synchronized (this) {
+                Files.write(outputFile, recordedMessage.toString().getBytes("UTF-8"), StandardOpenOption.APPEND);
+            }
 
             return responseBody;
         });
@@ -152,15 +168,14 @@ public class Recorder {
     private void setUpPutEndpoint() {
         put("/*", (req, res) -> {
             URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
-            Files.write(outputFile, (req.requestMethod() + " " + req.pathInfo() + " HTTP/1.1\r\n").getBytes("UTF-8"),
-                    StandardOpenOption.APPEND);
+            StringBuilder recordedMessage = new StringBuilder();
+            recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(" HTTP/1.1\r\n");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-            addHeaders(req, conn);
-            writeBlankLine();
-            Files.write(outputFile, (req.body() + "\r\n").getBytes("UTF-8"), StandardOpenOption.APPEND);
-            writeBlankLine();
-            writeBlankLine();
+            addHeaders(req, conn, recordedMessage);
+            recordedMessage.append("\r\n");
+            recordedMessage.append(req.body()).append("\r\n");
+            recordedMessage.append("\r\n\r\n");
 
             conn.setRequestMethod("PUT");
             conn.setDoOutput(true);
@@ -171,8 +186,12 @@ public class Recorder {
             Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
             String responseStatusLine = conn.getHeaderField(0);
 
-            writeResponse(responseBody, responseHeaders, responseStatusLine);
+            writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
             prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+            synchronized (this) {
+                Files.write(outputFile, recordedMessage.toString().getBytes("UTF-8"), StandardOpenOption.APPEND);
+            }
 
             return responseBody;
         });
@@ -189,23 +208,20 @@ public class Recorder {
         res.body(responseBody);
     }
 
-    private void writeResponse(String responseBody, Map<String, String> responseHeaders, String responseStatusLine) throws IOException {
-        Files.write(outputFile, (responseStatusLine + "\r\n").getBytes("UTF-8"), StandardOpenOption.APPEND);
+    private void writeResponse(String responseBody, Map<String, String> responseHeaders, String responseStatusLine,
+                               StringBuilder recordedMessage) throws IOException {
+        recordedMessage.append(responseStatusLine).append("\r\n");
         for (Map.Entry<String, String> header : responseHeaders.entrySet()) {
-            Files.write(outputFile, (header.getKey() + ": " + header.getValue() + "\r\n").getBytes("UTF-8"), StandardOpenOption.APPEND);
+            recordedMessage.append(header.getKey()).append(": ").append(header.getValue()).append("\r\n");
         }
-        Files.write(outputFile, ("\r\n" + responseBody + "\r\n\r\n\r\n\r\n").getBytes("UTF-8"), StandardOpenOption.APPEND);
+        recordedMessage.append("\r\n").append(responseBody).append("\r\n\r\n\r\n\r\n");
     }
 
-    private void addHeaders(Request req, URLConnection conn) throws IOException {
+    private void addHeaders(Request req, URLConnection conn, StringBuilder recordedMessage) throws IOException {
         for (String header : req.headers()) {
-            Files.write(outputFile, (header + ": " + req.headers(header) + "\r\n").getBytes("UTF-8"), StandardOpenOption.APPEND);
+            recordedMessage.append(header).append(": ").append(req.headers(header)).append("\r\n");
             conn.setRequestProperty(header, req.headers(header));
         }
-    }
-
-    private void writeBlankLine() throws IOException {
-        Files.write(outputFile, ("\r\n").getBytes("UTF-8"), StandardOpenOption.APPEND);
     }
 
     private void trustAllSSL() throws NoSuchAlgorithmException, KeyManagementException {

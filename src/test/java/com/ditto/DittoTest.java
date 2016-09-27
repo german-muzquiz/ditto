@@ -3,7 +3,7 @@ package com.ditto;
 import org.junit.Test;
 
 import java.io.FileNotFoundException;
-import java.util.Map;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -18,11 +18,16 @@ public class DittoTest {
         MessageFactory messageFactory = MessageFactory.newInstance(conf);
 
         // execute
-        Map<String, Response> responsesByUrl = messageFactory.responsesGetByUrl();
-        Response response = responsesByUrl.get(url);
+        List<RequestResponse> messages = messageFactory.responsesGetByUrl();
+        Response response = null;
+        for (RequestResponse requestResponse : messages) {
+            if (requestResponse.getRequest().getUrl().equals(url)) {
+                response = requestResponse.getResponse();
+            }
+        }
 
         // verify
-        assertEquals(TestUtils.RESPONSES_FOR_GET.get(url), response);
+        assertEquals(TestUtils.RESPONSES_FOR_GET.get(url + "?param=value").getResponse(), response);
     }
 
     @Test
@@ -34,11 +39,16 @@ public class DittoTest {
         MessageFactory messageFactory = MessageFactory.newInstance(conf);
 
         // execute
-        Map<String, Response> responsesByUrl = messageFactory.responsesHeadByUrl();
-        Response response = responsesByUrl.get(url);
+        List<RequestResponse> messages = messageFactory.responsesHeadByUrl();
+        Response response = null;
+        for (RequestResponse requestResponse : messages) {
+            if (requestResponse.getRequest().getUrl().equals(url)) {
+                response = requestResponse.getResponse();
+            }
+        }
 
         // verify
-        assertEquals(TestUtils.RESPONSES_FOR_HEAD.get(url), response);
+        assertEquals(TestUtils.RESPONSES_FOR_HEAD.get(url).getResponse(), response);
     }
 
     @Test
@@ -51,11 +61,16 @@ public class DittoTest {
         MessageFactory messageFactory = MessageFactory.newInstance(conf);
 
         // execute
-        Map<String, Map<String, Response>> responses = messageFactory.responsesPostByUrlAndBody();
-        Response response = responses.get(url).get(body);
+        List<RequestResponse> messages = messageFactory.responsesPostByUrlAndBody();
+        Response response = null;
+        for (RequestResponse requestResponse : messages) {
+            if (requestResponse.getRequest().getUrl().equals(url)) {
+                response = requestResponse.getResponse();
+            }
+        }
 
         // verify
-        assertEquals(TestUtils.RESPONSES_FOR_POST.get(url), response);
+        assertEquals(TestUtils.RESPONSES_FOR_POST.get(url).getResponse(), response);
     }
 
     @Test
@@ -68,11 +83,16 @@ public class DittoTest {
         MessageFactory messageFactory = MessageFactory.newInstance(conf);
 
         // execute
-        Map<String, Map<String, Response>> responses = messageFactory.responsesPutByUrlAndBody();
-        Response response = responses.get(url).get(body);
+        List<RequestResponse> messages = messageFactory.responsesPutByUrlAndBody();
+        Response response = null;
+        for (RequestResponse requestResponse : messages) {
+            if (requestResponse.getRequest().getUrl().equals(url)) {
+                response = requestResponse.getResponse();
+            }
+        }
 
         // verify
-        assertEquals(TestUtils.RESPONSES_FOR_PUT.get(url), response);
+        assertEquals(TestUtils.RESPONSES_FOR_PUT.get(url).getResponse(), response);
     }
 
     @Test
@@ -84,10 +104,15 @@ public class DittoTest {
         MessageFactory messageFactory = MessageFactory.newInstance(conf);
 
         // execute
-        Map<String, Response> responsesByUrl = messageFactory.responsesDeleteByUrl();
-        Response response = responsesByUrl.get(url);
+        List<RequestResponse> messages = messageFactory.responsesDeleteByUrl();
+        Response response = null;
+        for (RequestResponse requestResponse : messages) {
+            if (requestResponse.getRequest().getUrl().equals(url)) {
+                response = requestResponse.getResponse();
+            }
+        }
 
         // verify
-        assertEquals(TestUtils.RESPONSES_FOR_DELETE.get(url), response);
+        assertEquals(TestUtils.RESPONSES_FOR_DELETE.get(url).getResponse(), response);
     }
 }

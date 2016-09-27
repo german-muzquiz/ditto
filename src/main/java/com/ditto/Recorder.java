@@ -1,6 +1,6 @@
 package com.ditto;
 
-import spark.*;
+import spark.Request;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -10,7 +10,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -49,6 +48,10 @@ public class Recorder {
     public void start() throws KeyManagementException, NoSuchAlgorithmException {
         trustAllSSL();
         setUpGetEndpoint();
+        setUpHeadEndpoint();
+        setUpPostEndpoint();
+        setUpPutEndpoint();
+        setUpDeleteEndpoint();
     }
 
     private void setUpGetEndpoint() {
@@ -61,6 +64,108 @@ public class Recorder {
             writeBlankLine();
             writeBlankLine();
             conn.setRequestMethod("GET");
+            InputStream inputStream = conn.getInputStream();
+            String responseBody = isToString(inputStream);
+            Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
+            String responseStatusLine = conn.getHeaderField(0);
+
+            writeResponse(responseBody, responseHeaders, responseStatusLine);
+            prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+            return responseBody;
+        });
+    }
+
+    private void setUpHeadEndpoint() {
+        head("/*", (req, res) -> {
+            URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
+            Files.write(outputFile, (req.requestMethod() + " " + req.pathInfo() + " HTTP/1.1\r\n").getBytes("UTF-8"),
+                    StandardOpenOption.APPEND);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            addHeaders(req, conn);
+            writeBlankLine();
+            writeBlankLine();
+            conn.setRequestMethod("HEAD");
+            InputStream inputStream = conn.getInputStream();
+            String responseBody = isToString(inputStream);
+            Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
+            String responseStatusLine = conn.getHeaderField(0);
+
+            writeResponse(responseBody, responseHeaders, responseStatusLine);
+            prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+            return responseBody;
+        });
+    }
+
+    private void setUpDeleteEndpoint() {
+        delete("/*", (req, res) -> {
+            URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
+            Files.write(outputFile, (req.requestMethod() + " " + req.pathInfo() + " HTTP/1.1\r\n").getBytes("UTF-8"),
+                    StandardOpenOption.APPEND);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            addHeaders(req, conn);
+            writeBlankLine();
+            writeBlankLine();
+            conn.setRequestMethod("DELETE");
+            InputStream inputStream = conn.getInputStream();
+            String responseBody = isToString(inputStream);
+            Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
+            String responseStatusLine = conn.getHeaderField(0);
+
+            writeResponse(responseBody, responseHeaders, responseStatusLine);
+            prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+            return responseBody;
+        });
+    }
+
+    private void setUpPostEndpoint() {
+        post("/*", (req, res) -> {
+            URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
+            Files.write(outputFile, (req.requestMethod() + " " + req.pathInfo() + " HTTP/1.1\r\n").getBytes("UTF-8"),
+                    StandardOpenOption.APPEND);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+            addHeaders(req, conn);
+            writeBlankLine();
+            Files.write(outputFile, (req.body() + "\r\n").getBytes("UTF-8"), StandardOpenOption.APPEND);
+            writeBlankLine();
+            writeBlankLine();
+
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.getOutputStream().write(req.bodyAsBytes());
+
+            InputStream inputStream = conn.getInputStream();
+            String responseBody = isToString(inputStream);
+            Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
+            String responseStatusLine = conn.getHeaderField(0);
+
+            writeResponse(responseBody, responseHeaders, responseStatusLine);
+            prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+            return responseBody;
+        });
+    }
+
+    private void setUpPutEndpoint() {
+        put("/*", (req, res) -> {
+            URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
+            Files.write(outputFile, (req.requestMethod() + " " + req.pathInfo() + " HTTP/1.1\r\n").getBytes("UTF-8"),
+                    StandardOpenOption.APPEND);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+            addHeaders(req, conn);
+            writeBlankLine();
+            Files.write(outputFile, (req.body() + "\r\n").getBytes("UTF-8"), StandardOpenOption.APPEND);
+            writeBlankLine();
+            writeBlankLine();
+
+            conn.setRequestMethod("PUT");
+            conn.setDoOutput(true);
+            conn.getOutputStream().write(req.bodyAsBytes());
+
             InputStream inputStream = conn.getInputStream();
             String responseBody = isToString(inputStream);
             Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());

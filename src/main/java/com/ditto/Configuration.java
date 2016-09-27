@@ -16,32 +16,37 @@ public class Configuration {
     private URL destination;
 
     public Configuration(String[] args) {
-        if (args.length < 2) {
-            printGeneralUsage();
-            System.exit(1);
-        }
-
-        parseMode(args[0]);
-        parsePort(args[1]);
+        parseMode(args);
+        parsePort(args);
         parseMessagesFile(args);
         parseDestination(args);
     }
 
-    private void parseMode(String arg) {
+    private void parseMode(String[] args) {
+        if (args.length < 1) {
+            printGeneralUsage();
+            System.exit(1);
+        }
+
         try {
-            mode = Mode.valueOf(arg);
+            mode = Mode.valueOf(args[0]);
         } catch (Exception anEx) {
-            System.out.println("Invalid mode: " + arg);
+            System.out.println("Invalid mode: " + args[0]);
             printGeneralUsage();
             System.exit(1);
         }
     }
 
-    private void parsePort(String arg) {
+    private void parsePort(String[] args) {
+        if (args.length < 2) {
+            printUsage();
+            System.exit(1);
+        }
+
         try {
-            this.listeningPort = Integer.parseInt(arg);
+            this.listeningPort = Integer.parseInt(args[1]);
         } catch (Exception anEx) {
-            System.out.println("Invalid port: " + arg);
+            System.out.println("Invalid port: " + args[1]);
             printUsage();
             System.exit(1);
         }
@@ -126,7 +131,7 @@ public class Configuration {
     private void printReplayUsage() {
         System.out.println("Usage: java -jar ditto.jar replay <port> <messagesFile>");
         System.out.println("Where:");
-        System.out.println("    port: port to listen for incoming requests");
+        System.out.println("    port:         port to listen for incoming requests");
         System.out.println("    messagesFile: text file containing requests/responses to replicate");
     }
 
@@ -135,7 +140,7 @@ public class Configuration {
         System.out.println("Where:");
         System.out.println("    port:         port to listen for incoming requests");
         System.out.println("    destination:  real destination to which forward requests");
-        System.out.println("    messagesFile: text file containing requests/responses to replicate");
+        System.out.println("    messagesFile: text file containing to save messages");
     }
 
     public Mode getMode() {

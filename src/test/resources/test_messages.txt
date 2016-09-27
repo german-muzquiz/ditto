@@ -1,4 +1,4 @@
-GET /service/user/123 HTTP/1.1
+GET /service/user/123?param=value HTTP/1.1
 connection: Keep-Alive
 host: localhost:8080
 authorization: BEARER nYnQbp7iI5hmNZxd6-q4mg

@@ -27,7 +27,7 @@ public class Response {
 
         String[] sections = fullResponse.split("\\r\\n\\r\\n");
         if (sections.length > 1 && !sections[1].trim().isEmpty()) {
-            body = sections[1];
+            body = sections[1].trim();
         }
     }
 

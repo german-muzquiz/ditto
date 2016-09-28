@@ -8,7 +8,7 @@ import java.net.URL;
  */
 public class Configuration {
 
-    public enum Mode {record, replay}
+    public enum Mode {record, replay, intercept}
 
     private int listeningPort;
     private File messagesFile;
@@ -55,6 +55,7 @@ public class Configuration {
     private void parseMessagesFile(String[] args) {
         String arg = null;
         switch (mode) {
+            case intercept:
             case record:
                 if (args.length < 4) {
                     printUsage();
@@ -78,9 +79,9 @@ public class Configuration {
         }
 
         File file = new File(arg);
-        if (mode == Mode.replay && !file.exists()) {
+        if ((mode == Mode.replay || mode == Mode.intercept) && !file.exists()) {
             System.out.println("File doesn't exist: " + file.getAbsolutePath());
-            printReplayUsage();
+            printUsage();
             System.exit(1);
         }
 
@@ -121,15 +122,19 @@ public class Configuration {
             case replay:
                 printReplayUsage();
                 break;
+            case intercept:
+                printInterceptUsage();
+                break;
         }
     }
 
     private void printGeneralUsage() {
-        System.out.println("Usage: java -jar ditto.jar [record|replay]");
+        System.out.println("Usage: java -jar ditto.jar [record|replay|intercept]");
     }
 
     private void printReplayUsage() {
         System.out.println("Usage: java -jar ditto.jar replay <port> <messagesFile>");
+        System.out.println("Replay: Answer requests with responses read from a file.");
         System.out.println("Where:");
         System.out.println("    port:         port to listen for incoming requests");
         System.out.println("    messagesFile: text file containing requests/responses to replicate");
@@ -137,10 +142,20 @@ public class Configuration {
 
     private void printRecordUsage() {
         System.out.println("Usage: java -jar ditto.jar record <port> <destination> <messagesFile>");
+        System.out.println("Record: Proxy all requests to other service and write all communication to a text file.");
         System.out.println("Where:");
         System.out.println("    port:         port to listen for incoming requests");
         System.out.println("    destination:  real destination to which forward requests");
-        System.out.println("    messagesFile: text file containing to save messages");
+        System.out.println("    messagesFile: text file to which messages are going to be saved");
+    }
+
+    private void printInterceptUsage() {
+        System.out.println("Usage: java -jar ditto.jar intercept <port> <destination> <messagesFile>");
+        System.out.println("Intercept: Answer matching requests with responses from a text file, and proxy all other requests to other service.");
+        System.out.println("Where:");
+        System.out.println("    port:         port to listen for incoming requests");
+        System.out.println("    destination:  real destination to which forward requests that are not in messagesFile");
+        System.out.println("    messagesFile: text file containing requests/responses to replicate");
     }
 
     public Mode getMode() {

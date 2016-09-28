@@ -3,7 +3,6 @@ package com.ditto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -25,13 +24,19 @@ public class Ditto {
         port(conf.getListeningPort());
         threadPool(500);
 
-        if (conf.getMode() == Configuration.Mode.replay) {
-            Replayer replayer = new Replayer(conf);
-            replayer.start();
-
-        } else if (conf.getMode() == Configuration.Mode.record) {
-            Recorder recorder = new Recorder(conf);
-            recorder.start();
+        switch (conf.getMode()) {
+            case replay:
+                Replayer replayer = new Replayer(conf);
+                replayer.start();
+                break;
+            case record:
+                Recorder recorder = new Recorder(conf, true);
+                recorder.start();
+                break;
+            case intercept:
+                Interceptor interceptor = new Interceptor(new Replayer(conf), new Recorder(conf, false));
+                interceptor.start();
+                break;
         }
     }
 

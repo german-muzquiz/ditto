@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -19,18 +20,35 @@ public class Replayer {
 
     private static final Logger LOG = LoggerFactory.getLogger(Ditto.class);
     private Configuration configuration;
+    private MessageFactory messageFactory;
 
     public Replayer(Configuration configuration) {
         this.configuration = configuration;
     }
 
     public void start() throws FileNotFoundException, UnsupportedEncodingException {
-        MessageFactory messageFactory = MessageFactory.newInstance(configuration);
+        messageFactory = MessageFactory.newInstance(configuration);
         setUpGetEndpoints(messageFactory);
         setUpHeadEndpoints(messageFactory);
         setUpPostEndpoints(messageFactory);
         setUpPutEndpoints(messageFactory);
         setUpDeleteEndpoints(messageFactory);
+    }
+
+    public Object handleRequest(String method, spark.Request req, spark.Response res) throws IOException {
+        switch (method) {
+            case "GET":
+                return handleRequest(req, res, messageFactory.responsesGetByUrl());
+            case "HEAD":
+                return handleRequest(req, res, messageFactory.responsesHeadByUrl());
+            case "POST":
+                return handleRequest(req, res, messageFactory.responsesPostByUrlAndBody());
+            case "PUT":
+                return handleRequest(req, res, messageFactory.responsesPutByUrlAndBody());
+            case "DELETE":
+                return handleRequest(req, res, messageFactory.responsesDeleteByUrl());
+        }
+        return null;
     }
 
     private static void setUpGetEndpoints(MessageFactory messageFactory) {
@@ -70,7 +88,6 @@ public class Replayer {
             }
         }
 
-        LOG.error("No response found for " + req.url() + " and body " + req.body());
         res.status(404);
         return null;
     }

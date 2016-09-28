@@ -1,6 +1,7 @@
 package com.ditto;
 
 import spark.Request;
+import spark.Response;
 import spark.utils.IOUtils;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -38,10 +39,13 @@ public class Recorder {
 
     private Configuration configuration;
     private Path outputFile;
+    private boolean writeMessages;
 
-    public Recorder(Configuration configuration) throws IOException {
+    public Recorder(Configuration configuration, boolean writeMessages) throws IOException {
         this.configuration = configuration;
         this.outputFile = Paths.get(configuration.getMessagesFile().getAbsolutePath());
+        this.writeMessages = writeMessages;
+        this.writeMessages = writeMessages;
         if (!configuration.getMessagesFile().exists()) {
             configuration.getMessagesFile().createNewFile();
         }
@@ -57,149 +61,170 @@ public class Recorder {
     }
 
     private void setUpGetEndpoint() {
-        get("/*", (req, res) -> {
-            String queryParams = getQueryParams(req);
+        get("/*", this::handleGetRequest);
+    }
 
-            URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0] + queryParams);
-            StringBuilder recordedMessage = new StringBuilder();
-            recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(queryParams);
-            recordedMessage.append(" HTTP/1.1\n");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            addHeaders(req, conn, recordedMessage);
-            recordedMessage.append("\n");
+    public Object handleGetRequest(Request req, spark.Response res) throws IOException {
+        String queryParams = getQueryParams(req);
 
-            conn.setRequestMethod("GET");
-            Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
-            InputStream inputStream = getInputStream(conn, responseHeaders);
-            String responseBody = IOUtils.toString(inputStream);
-            String responseStatusLine = conn.getHeaderField(0);
+        URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0] + queryParams);
+        StringBuilder recordedMessage = new StringBuilder();
 
-            writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
-            prepareReturnResponse(res, conn, responseBody, responseHeaders);
+        recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(queryParams);
+        recordedMessage.append(" HTTP/1.1\n");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        addHeaders(req, conn, recordedMessage);
+        recordedMessage.append("\n");
 
-            synchronized (this) {
+        conn.setRequestMethod("GET");
+        Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
+        InputStream inputStream = getInputStream(conn, responseHeaders);
+        String responseBody = IOUtils.toString(inputStream);
+        String responseStatusLine = conn.getHeaderField(0);
+
+        writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
+        prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+        if (writeMessages) {
+            synchronized (Recorder.class) {
                 Files.write(outputFile, recordedMessage.toString().getBytes("UTF-8"), StandardOpenOption.APPEND);
             }
+        }
 
-            return res.body();
-        });
+        return res.body();
     }
 
     private void setUpHeadEndpoint() {
-        head("/*", (req, res) -> {
-            URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
-            StringBuilder recordedMessage = new StringBuilder();
-            recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(" HTTP/1.1\n");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            addHeaders(req, conn, recordedMessage);
-            recordedMessage.append("\n");
+        head("/*", this::handleHeadRequest);
+    }
 
-            conn.setRequestMethod("HEAD");
-            Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
-            InputStream inputStream = getInputStream(conn, responseHeaders);
-            String responseBody = IOUtils.toString(inputStream);
-            String responseStatusLine = conn.getHeaderField(0);
+    public Object handleHeadRequest(Request req, Response res) throws IOException {
+        URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
+        StringBuilder recordedMessage = new StringBuilder();
+        recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(" HTTP/1.1\n");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        addHeaders(req, conn, recordedMessage);
+        recordedMessage.append("\n");
 
-            writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
-            prepareReturnResponse(res, conn, responseBody, responseHeaders);
+        conn.setRequestMethod("HEAD");
+        Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
+        InputStream inputStream = getInputStream(conn, responseHeaders);
+        String responseBody = IOUtils.toString(inputStream);
+        String responseStatusLine = conn.getHeaderField(0);
 
-            synchronized (this) {
+        writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
+        prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+        if (writeMessages) {
+            synchronized (Recorder.class) {
                 Files.write(outputFile, recordedMessage.toString().getBytes("UTF-8"), StandardOpenOption.APPEND);
             }
+        }
 
-            return res.body();
-        });
+        return res.body();
     }
 
     private void setUpDeleteEndpoint() {
-        delete("/*", (req, res) -> {
-            URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
-            StringBuilder recordedMessage = new StringBuilder();
-            recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(" HTTP/1.1\n");
+        delete("/*", this::handleDeleteRequest);
+    }
 
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            addHeaders(req, conn, recordedMessage);
-            recordedMessage.append("\n");
+    public Object handleDeleteRequest(Request req, Response res) throws IOException {
+        URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
+        StringBuilder recordedMessage = new StringBuilder();
+        recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(" HTTP/1.1\n");
 
-            conn.setRequestMethod("DELETE");
-            Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
-            InputStream inputStream = getInputStream(conn, responseHeaders);
-            String responseBody = IOUtils.toString(inputStream);
-            String responseStatusLine = conn.getHeaderField(0);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        addHeaders(req, conn, recordedMessage);
+        recordedMessage.append("\n");
 
-            writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
-            prepareReturnResponse(res, conn, responseBody, responseHeaders);
+        conn.setRequestMethod("DELETE");
+        Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
+        InputStream inputStream = getInputStream(conn, responseHeaders);
+        String responseBody = IOUtils.toString(inputStream);
+        String responseStatusLine = conn.getHeaderField(0);
 
-            synchronized (this) {
+        writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
+        prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+        if (writeMessages) {
+            synchronized (Recorder.class) {
                 Files.write(outputFile, recordedMessage.toString().getBytes("UTF-8"), StandardOpenOption.APPEND);
             }
+        }
 
-            return res.body();
-        });
+        return res.body();
     }
 
     private void setUpPostEndpoint() {
-        post("/*", (req, res) -> {
-            URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
-            StringBuilder recordedMessage = new StringBuilder();
-            recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(" HTTP/1.1\n");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        post("/*", this::handlePostRequest);
+    }
 
-            addHeaders(req, conn, recordedMessage);
-            recordedMessage.append("\n");
-            recordedMessage.append(req.body()).append("\n");
-            recordedMessage.append("\n");
+    public Object handlePostRequest(Request req, Response res) throws IOException {
+        URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
+        StringBuilder recordedMessage = new StringBuilder();
+        recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(" HTTP/1.1\n");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-            conn.setRequestMethod("POST");
-            conn.setDoOutput(true);
-            conn.getOutputStream().write(req.bodyAsBytes());
+        addHeaders(req, conn, recordedMessage);
+        recordedMessage.append("\n");
+        recordedMessage.append(req.body()).append("\n");
+        recordedMessage.append("\n");
 
-            Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
-            InputStream inputStream = getInputStream(conn, responseHeaders);
-            String responseBody = IOUtils.toString(inputStream);
-            String responseStatusLine = conn.getHeaderField(0);
+        conn.setRequestMethod("POST");
+        conn.setDoOutput(true);
+        conn.getOutputStream().write(req.bodyAsBytes());
 
-            writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
-            prepareReturnResponse(res, conn, responseBody, responseHeaders);
+        Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
+        InputStream inputStream = getInputStream(conn, responseHeaders);
+        String responseBody = IOUtils.toString(inputStream);
+        String responseStatusLine = conn.getHeaderField(0);
 
-            synchronized (this) {
+        writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
+        prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+        if (writeMessages) {
+            synchronized (Recorder.class) {
                 Files.write(outputFile, recordedMessage.toString().getBytes("UTF-8"), StandardOpenOption.APPEND);
             }
+        }
 
-            return res.body();
-        });
+        return res.body();
     }
 
     private void setUpPutEndpoint() {
-        put("/*", (req, res) -> {
-            URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
-            StringBuilder recordedMessage = new StringBuilder();
-            recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(" HTTP/1.1\n");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        put("/*", this::handlePutRequest);
+    }
 
-            addHeaders(req, conn, recordedMessage);
-            recordedMessage.append("\n");
-            recordedMessage.append(req.body()).append("\n");
-            recordedMessage.append("\n");
+    public Object handlePutRequest(Request req, Response res) throws IOException {
+        URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0]);
+        StringBuilder recordedMessage = new StringBuilder();
+        recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(" HTTP/1.1\n");
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-            conn.setRequestMethod("PUT");
-            conn.setDoOutput(true);
-            conn.getOutputStream().write(req.bodyAsBytes());
+        addHeaders(req, conn, recordedMessage);
+        recordedMessage.append("\n");
+        recordedMessage.append(req.body()).append("\n");
+        recordedMessage.append("\n");
 
-            Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
-            InputStream inputStream = getInputStream(conn, responseHeaders);
-            String responseBody = IOUtils.toString(inputStream);
-            String responseStatusLine = conn.getHeaderField(0);
+        conn.setRequestMethod("PUT");
+        conn.setDoOutput(true);
+        conn.getOutputStream().write(req.bodyAsBytes());
 
-            writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
-            prepareReturnResponse(res, conn, responseBody, responseHeaders);
+        Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
+        InputStream inputStream = getInputStream(conn, responseHeaders);
+        String responseBody = IOUtils.toString(inputStream);
+        String responseStatusLine = conn.getHeaderField(0);
 
-            synchronized (this) {
+        writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
+        prepareReturnResponse(res, conn, responseBody, responseHeaders);
+
+        if (writeMessages) {
+            synchronized (Recorder.class) {
                 Files.write(outputFile, recordedMessage.toString().getBytes("UTF-8"), StandardOpenOption.APPEND);
             }
+        }
 
-            return res.body();
-        });
+        return res.body();
     }
 
     private void prepareReturnResponse(spark.Response res, HttpURLConnection conn, String responseBody,

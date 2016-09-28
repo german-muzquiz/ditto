@@ -81,6 +81,10 @@ public class Replayer {
                     if (header.getKey().equalsIgnoreCase("Content-Length")) {
                         continue;
                     }
+                    if (header.getKey().equalsIgnoreCase(Constants.HEADER_DELAY)) {
+                        handleDelay(header);
+                        continue;
+                    }
                     res.header(header.getKey(), header.getValue());
                 }
 
@@ -90,5 +94,14 @@ public class Replayer {
 
         res.status(404);
         return null;
+    }
+
+    private static void handleDelay(Map.Entry<String, String> header) {
+        try {
+            int delaySeconds = Integer.parseInt(header.getValue().trim());
+            Thread.sleep(delaySeconds * 1000);
+        } catch (Exception anEx) {
+            LOG.warn("Exception executing delay", anEx);
+        }
     }
 }

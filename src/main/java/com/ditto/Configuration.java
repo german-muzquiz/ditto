@@ -138,6 +138,7 @@ public class Configuration {
         System.out.println("Where:");
         System.out.println("    port:         port to listen for incoming requests");
         System.out.println("    messagesFile: text file containing requests/responses to replicate");
+        printSpecialHeaders();
     }
 
     private void printRecordUsage() {
@@ -156,6 +157,15 @@ public class Configuration {
         System.out.println("    port:         port to listen for incoming requests");
         System.out.println("    destination:  real destination to which forward requests that are not in messagesFile");
         System.out.println("    messagesFile: text file containing requests/responses to replicate");
+        printSpecialHeaders();
+    }
+
+    private void printSpecialHeaders() {
+        System.out.println("");
+        System.out.println("Messages file may contain the following special headers used by Ditto, they are removed before sending request/responses:");
+        System.out.println("Response headers:");
+        System.out.println(String.format("%-20s: Delay in seconds for sending the response.", Constants.HEADER_DELAY));
+        System.out.print("\n\n\n");
     }
 
     public Mode getMode() {

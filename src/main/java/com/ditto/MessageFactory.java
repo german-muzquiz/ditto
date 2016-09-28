@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +19,7 @@ public class MessageFactory {
 
     private Map<String, List<RequestResponse>> messagesByMethod = new HashMap<>();
 
-    public static MessageFactory newInstance(Configuration configuration) throws FileNotFoundException {
+    public static MessageFactory newInstance(Configuration configuration) throws FileNotFoundException, UnsupportedEncodingException {
         LOG.info("Loading messages from " + configuration.getMessagesFile().getAbsolutePath() + "...");
         Scanner scanner = new Scanner(configuration.getMessagesFile()).useDelimiter("(?=\\n(GET|POST|PUT|DELETE|HEAD))");
         List<RequestResponse> messagePairs = new ArrayList<>();

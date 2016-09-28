@@ -1,8 +1,9 @@
 package com.ditto;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Represents an HTTP request.
@@ -44,7 +45,8 @@ public class Request {
         String[] params = paramsString.split("&");
         for (String param : params) {
             String[] pair = param.split("=");
-            queryParams.put(pair[0], pair[1]);
+            String paramValue = pair.length > 1 ? pair[1] : null;
+            queryParams.put(pair[0], paramValue);
         }
     }
 
@@ -55,7 +57,7 @@ public class Request {
         }
     }
 
-    public boolean matchesRequest(spark.Request req) {
+    public boolean matchesRequest(spark.Request req) throws UnsupportedEncodingException {
         String myUrl = req.url().replaceFirst(".*//.*?/", "/");
         return matchesUrl(myUrl) &&
                 matchesQueryParams(req) &&
@@ -66,10 +68,13 @@ public class Request {
         return url.equals(this.url);
     }
 
-    private boolean matchesQueryParams(spark.Request req) {
+    private boolean matchesQueryParams(spark.Request req) throws UnsupportedEncodingException {
         for (Map.Entry<String, String> param : queryParams.entrySet()) {
-            if (req.queryParams(param.getKey()) == null ||
-               !req.queryParams(param.getKey()).equals(param.getValue())) {
+            String paramFromRequest = req.queryParams(param.getKey());
+            String paramFromFile = URLDecoder.decode(param.getValue(), "UTF-8");
+
+            if (paramFromRequest == null ||
+               !paramFromRequest.equals(paramFromFile)) {
                 return false;
             }
         }

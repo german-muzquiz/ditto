@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +24,7 @@ public class Replayer {
         this.configuration = configuration;
     }
 
-    public void start() throws FileNotFoundException {
+    public void start() throws FileNotFoundException, UnsupportedEncodingException {
         MessageFactory messageFactory = MessageFactory.newInstance(configuration);
         setUpGetEndpoints(messageFactory);
         setUpHeadEndpoints(messageFactory);
@@ -51,7 +53,7 @@ public class Replayer {
         put("/*", (req, res) -> handleRequest(req, res, messageFactory.responsesPutByUrlAndBody()));
     }
 
-    private static Object handleRequest(spark.Request req, spark.Response res, List<RequestResponse> mappings) {
+    private static Object handleRequest(spark.Request req, spark.Response res, List<RequestResponse> mappings) throws IOException {
         for (RequestResponse requestResponse : mappings) {
             if (requestResponse.getRequest().matchesRequest(req)) {
                 Response response = requestResponse.getResponse();
@@ -64,8 +66,7 @@ public class Replayer {
                     res.header(header.getKey(), header.getValue());
                 }
 
-                res.body(response.getBody());
-                return res.body() != null ? res.body() : "";
+                return response.getBody() != null ? response.getBody() : "";
             }
         }
 

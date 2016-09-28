@@ -1,7 +1,10 @@
 package com.ditto;
 
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Represents an HTTP response.
@@ -9,11 +12,12 @@ import java.util.Map;
 public class Response {
     private int statusCode;
     private Map<String, String> headers = new HashMap<>();
-    private String body;
+    private byte[] body;
 
-    public Response(String fullResponse) {
-        String[] lines = fullResponse.split("\\r\\n");
-        for (int i = 0; i < lines.length; i++) {
+    public Response(String fullResponse) throws UnsupportedEncodingException {
+        String[] lines = fullResponse.split("\\n");
+        int i;
+        for (i = 0; i < lines.length; i++) {
             if (i == 0) {
                 statusCode = Integer.parseInt(lines[i].split(" ")[1]);
                 continue;
@@ -25,9 +29,12 @@ public class Response {
             headers.put(header[0], header[1]);
         }
 
-        String[] sections = fullResponse.split("\\r\\n\\r\\n");
-        if (sections.length > 1 && !sections[1].trim().isEmpty()) {
-            body = sections[1].trim();
+        // Check to see if there is a body
+        if (lines.length > ++i && !lines[i].trim().isEmpty()) {
+            String[] bodyLines = Arrays.copyOfRange(lines, i, lines.length);
+            String joinedLines = Arrays.stream(bodyLines)
+                    .collect(Collectors.joining("\n"));
+            body = joinedLines.getBytes("UTF-8");
         }
     }
 
@@ -39,7 +46,7 @@ public class Response {
         return headers;
     }
 
-    public String getBody() {
+    public byte[] getBody() {
         return body;
     }
 
@@ -69,7 +76,6 @@ public class Response {
         return "Response{" +
                 "statusCode=" + statusCode +
                 ", headers=" + headers +
-                ", body='" + body + '\'' +
                 '}';
     }
 }

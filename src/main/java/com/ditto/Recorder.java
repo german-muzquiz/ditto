@@ -8,6 +8,7 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -67,7 +68,8 @@ public class Recorder {
     public Object handleGetRequest(Request req, spark.Response res) throws IOException {
         String queryParams = getQueryParams(req);
 
-        URL url = new URL(configuration.getDestination().toString() + "/" + req.splat()[0] + queryParams);
+        String requestContext = req.url().replaceAll(".*//.*?/", "");
+        URL url = new URL(configuration.getDestination().toString() + "/" + requestContext + queryParams);
         StringBuilder recordedMessage = new StringBuilder();
 
         recordedMessage.append(req.requestMethod()).append(" ").append(req.pathInfo()).append(queryParams);
@@ -78,9 +80,9 @@ public class Recorder {
 
         conn.setRequestMethod("GET");
         Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
-        InputStream inputStream = getInputStream(conn, responseHeaders);
-        String responseBody = IOUtils.toString(inputStream);
         String responseStatusLine = conn.getHeaderField(0);
+        InputStream inputStream = getInputStream(conn, responseHeaders);
+        String responseBody = inputStream != null ? IOUtils.toString(inputStream) : "";
 
         writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
         prepareReturnResponse(res, conn, responseBody, responseHeaders);
@@ -262,12 +264,17 @@ public class Recorder {
     }
 
     private InputStream getInputStream(HttpURLConnection conn, Map<String, String> responseHeaders) throws IOException {
-        for (String headerName : responseHeaders.keySet()) {
-            if (headerName.equalsIgnoreCase("Content-Encoding") && responseHeaders.get(headerName).equalsIgnoreCase("gzip")) {
-                return new GZIPInputStream(conn.getInputStream());
+        try {
+            for (String headerName : responseHeaders.keySet()) {
+                if (headerName.equalsIgnoreCase("Content-Encoding") && responseHeaders.get(headerName).equalsIgnoreCase("gzip")) {
+                    return new GZIPInputStream(conn.getInputStream());
+                }
             }
+            return conn.getInputStream();
+
+        } catch (Exception anEx) {
+            return null;
         }
-        return conn.getInputStream();
     }
 
     private void trustAllSSL() throws NoSuchAlgorithmException, KeyManagementException {

@@ -15,7 +15,12 @@ public class Response {
     private byte[] body;
 
     public Response(String fullResponse) throws UnsupportedEncodingException {
-        String[] lines = fullResponse.split("\\n");
+        String lineBreak = "\n";
+        if (fullResponse.contains("\r\n")) {
+            lineBreak = "\r\n";
+        }
+
+        String[] lines = fullResponse.split(lineBreak);
         int i;
         for (i = 0; i < lines.length; i++) {
             if (i == 0) {
@@ -33,7 +38,7 @@ public class Response {
         if (lines.length > ++i && !lines[i].trim().isEmpty()) {
             String[] bodyLines = Arrays.copyOfRange(lines, i, lines.length);
             String joinedLines = Arrays.stream(bodyLines)
-                    .collect(Collectors.joining("\n"));
+                    .collect(Collectors.joining(lineBreak));
             body = joinedLines.getBytes("UTF-8");
         }
     }

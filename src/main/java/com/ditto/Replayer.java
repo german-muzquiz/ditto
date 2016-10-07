@@ -81,7 +81,8 @@ public class Replayer {
                     if (header.getKey().equalsIgnoreCase("Content-Length")) {
                         continue;
                     }
-                    if (header.getKey().equalsIgnoreCase(Constants.HEADER_DELAY)) {
+                    if (header.getKey().equalsIgnoreCase(Constants.HEADER_DELAY) ||
+                        header.getKey().equalsIgnoreCase(Constants.HEADER_MATCHES_BODY)) {
                         handleDelay(header);
                         continue;
                     }

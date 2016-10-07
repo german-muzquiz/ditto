@@ -110,9 +110,9 @@ public class Recorder {
 
         conn.setRequestMethod("HEAD");
         Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
-        InputStream inputStream = getInputStream(conn, responseHeaders);
-        String responseBody = IOUtils.toString(inputStream);
         String responseStatusLine = conn.getHeaderField(0);
+        InputStream inputStream = getInputStream(conn, responseHeaders);
+        String responseBody = inputStream != null ? IOUtils.toString(inputStream) : "";
 
         writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
         prepareReturnResponse(res, conn, responseBody, responseHeaders);
@@ -141,9 +141,9 @@ public class Recorder {
 
         conn.setRequestMethod("DELETE");
         Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
-        InputStream inputStream = getInputStream(conn, responseHeaders);
-        String responseBody = IOUtils.toString(inputStream);
         String responseStatusLine = conn.getHeaderField(0);
+        InputStream inputStream = getInputStream(conn, responseHeaders);
+        String responseBody = inputStream != null ? IOUtils.toString(inputStream) : "";
 
         writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
         prepareReturnResponse(res, conn, responseBody, responseHeaders);
@@ -177,9 +177,9 @@ public class Recorder {
         conn.getOutputStream().write(req.bodyAsBytes());
 
         Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
-        InputStream inputStream = getInputStream(conn, responseHeaders);
-        String responseBody = IOUtils.toString(inputStream);
         String responseStatusLine = conn.getHeaderField(0);
+        InputStream inputStream = getInputStream(conn, responseHeaders);
+        String responseBody = inputStream != null ? IOUtils.toString(inputStream) : "";
 
         writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
         prepareReturnResponse(res, conn, responseBody, responseHeaders);
@@ -213,9 +213,9 @@ public class Recorder {
         conn.getOutputStream().write(req.bodyAsBytes());
 
         Map<String, String> responseHeaders = parseResponseHeaders(conn.getHeaderFields());
-        InputStream inputStream = getInputStream(conn, responseHeaders);
-        String responseBody = IOUtils.toString(inputStream);
         String responseStatusLine = conn.getHeaderField(0);
+        InputStream inputStream = getInputStream(conn, responseHeaders);
+        String responseBody = inputStream != null ? IOUtils.toString(inputStream) : "";
 
         writeResponse(responseBody, responseHeaders, responseStatusLine, recordedMessage);
         prepareReturnResponse(res, conn, responseBody, responseHeaders);
@@ -267,10 +267,19 @@ public class Recorder {
         try {
             for (String headerName : responseHeaders.keySet()) {
                 if (headerName.equalsIgnoreCase("Content-Encoding") && responseHeaders.get(headerName).equalsIgnoreCase("gzip")) {
-                    return new GZIPInputStream(conn.getInputStream());
+                    if (conn.getResponseCode() >= 400 && conn.getResponseCode() <= 599) {
+                        return new GZIPInputStream(conn.getErrorStream());
+                    } else {
+                        return new GZIPInputStream(conn.getInputStream());
+                    }
                 }
             }
-            return conn.getInputStream();
+
+            if (conn.getResponseCode() >= 400 && conn.getResponseCode() <= 599) {
+                return conn.getErrorStream();
+            } else {
+                return conn.getInputStream();
+            }
 
         } catch (Exception anEx) {
             return null;

@@ -13,12 +13,18 @@ public class Request {
     private String url;
     private Map<String, String> queryParams = new HashMap<>();
     private String body;
+    private Map<String, String> headers = new HashMap<>();
 
     public Request(String requestFromFile) {
+        String lineBreak = "\\n";
+        if (requestFromFile.contains("\r\n")) {
+            lineBreak = "\\r\\n";
+        }
         parseMethod(requestFromFile);
         parseUrl(requestFromFile);
         parseQueryParams(requestFromFile);
-        parseRequestBody(requestFromFile);
+        parseHeaders(requestFromFile, lineBreak);
+        parseRequestBody(requestFromFile, lineBreak);
     }
 
     private void parseMethod(String request) {
@@ -50,8 +56,18 @@ public class Request {
         }
     }
 
-    private void parseRequestBody(String request) {
-        String[] sections = request.split("\\r\\n\\r\\n");
+    private void parseHeaders(String request, String lineBreak) {
+        String[] sections = request.split(lineBreak + lineBreak);
+        String[] headerLines = sections[0].split(lineBreak);
+        for (int i = 1; i < headerLines.length; i++) {
+            String headerName = headerLines[i].replaceAll(":.*", "");
+            String headerValue = headerLines[i].replaceAll(".*?:", "").trim();
+            headers.put(headerName, headerValue);
+        }
+    }
+
+    private void parseRequestBody(String request, String lineBreak) {
+        String[] sections = request.split(lineBreak + lineBreak);
         if (sections.length > 1 && !sections[1].trim().isEmpty()) {
             body = sections[1].trim();
         }
@@ -82,11 +98,27 @@ public class Request {
     }
 
     private boolean matchesBody(spark.Request req) {
-        if (this.body == null || this.body.isEmpty()) {
-            return req.body() == null || req.body().isEmpty();
-        }
+        if (!hasMatchesBodyHeader()) {
+            if (this.body == null || this.body.isEmpty()) {
+                return req.body() == null || req.body().isEmpty();
+            }
 
-        return this.body.equals(req.body().trim());
+            return this.body.equals(req.body().trim());
+
+        } else {
+            String incomingBody = req.body().trim();
+            String regexSubstitution = headers.get(Constants.HEADER_MATCHES_BODY).replace("*", ".*");
+            return incomingBody.replaceAll("\\r", "").replaceAll("\\n", "").matches(regexSubstitution);
+        }
+    }
+
+    private boolean hasMatchesBodyHeader() {
+        for (String headerName : headers.keySet()) {
+            if (headerName.equalsIgnoreCase(Constants.HEADER_MATCHES_BODY)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public String getMethod() {

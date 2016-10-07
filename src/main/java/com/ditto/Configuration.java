@@ -163,8 +163,10 @@ public class Configuration {
     private void printSpecialHeaders() {
         System.out.println("");
         System.out.println("Messages file may contain the following special headers used by Ditto, they are removed before sending request/responses:");
-        System.out.println("Response headers:");
-        System.out.println(String.format("%-20s: Delay in seconds for sending the response.", Constants.HEADER_DELAY));
+        System.out.println("Headers in request:");
+        System.out.println(String.format("%30s: Content in the request body needed to match this request. Can use wildcard (*).", Constants.HEADER_MATCHES_BODY));
+        System.out.println("\nHeaders in response:");
+        System.out.println(String.format("%30s: Delay in seconds for sending the response.", Constants.HEADER_DELAY));
         System.out.print("\n\n\n");
     }
 

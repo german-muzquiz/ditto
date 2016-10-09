@@ -164,7 +164,8 @@ public class Configuration {
         System.out.println("");
         System.out.println("Messages file may contain the following special headers used by Ditto, they are removed before sending request/responses:");
         System.out.println("Headers in request:");
-        System.out.println(String.format("%30s: Content in the request body needed to match this request. Can use wildcard (*).", Constants.HEADER_MATCHES_BODY));
+        System.out.println(String.format("%30s: Can use wildcard asterisk (*) in request body to match multiple incoming requests.", Constants.HEADER_BODY_MATCH));
+        System.out.println(String.format("%30s  Example: {\"id\":*} will match all id's.", ""));
         System.out.println("\nHeaders in response:");
         System.out.println(String.format("%30s: Delay in seconds for sending the response.", Constants.HEADER_DELAY));
         System.out.print("\n\n\n");

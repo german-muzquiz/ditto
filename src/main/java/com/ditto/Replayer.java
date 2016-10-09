@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -82,7 +81,7 @@ public class Replayer {
                         continue;
                     }
                     if (header.getKey().equalsIgnoreCase(Constants.HEADER_DELAY) ||
-                        header.getKey().equalsIgnoreCase(Constants.HEADER_MATCHES_BODY)) {
+                        header.getKey().equalsIgnoreCase(Constants.HEADER_BODY_MATCH)) {
                         handleDelay(header);
                         continue;
                     }

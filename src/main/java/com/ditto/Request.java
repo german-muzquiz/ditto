@@ -2,8 +2,11 @@ package com.ditto;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Represents an HTTP request.
@@ -11,7 +14,7 @@ import java.util.Map;
 public class Request {
     private String method;
     private String url;
-    private Map<String, String> queryParams = new HashMap<>();
+    private Map<String, List<String>> queryParams = new HashMap<>();
     private String body;
     private Map<String, String> headers = new HashMap<>();
 
@@ -52,7 +55,8 @@ public class Request {
         for (String param : params) {
             String[] pair = param.split("=");
             String paramValue = pair.length > 1 ? pair[1] : null;
-            queryParams.put(pair[0], paramValue);
+            queryParams.putIfAbsent(pair[0], new ArrayList<>());
+            queryParams.get(pair[0]).add(paramValue);
         }
     }
 
@@ -85,9 +89,9 @@ public class Request {
     }
 
     private boolean matchesQueryParams(spark.Request req) throws UnsupportedEncodingException {
-        for (Map.Entry<String, String> param : queryParams.entrySet()) {
+        for (Map.Entry<String, List<String>> param : queryParams.entrySet()) {
             String paramFromRequest = req.queryParams(param.getKey());
-            String paramFromFile = URLDecoder.decode(param.getValue(), "UTF-8");
+            String paramFromFile = URLDecoder.decode(param.getValue().get(0), "UTF-8");
 
             if (paramFromRequest == null ||
                !paramFromRequest.equals(paramFromFile)) {
@@ -98,7 +102,7 @@ public class Request {
     }
 
     private boolean matchesBody(spark.Request req) {
-        if (!hasMatchesBodyHeader()) {
+        if (!hasBodyMatchWildcard()) {
             if (this.body == null || this.body.isEmpty()) {
                 return req.body() == null || req.body().isEmpty();
             }
@@ -107,14 +111,14 @@ public class Request {
 
         } else {
             String incomingBody = req.body().trim();
-            String regexSubstitution = headers.get(Constants.HEADER_MATCHES_BODY).replace("*", ".*");
-            return incomingBody.replaceAll("\\r", "").replaceAll("\\n", "").matches(regexSubstitution);
+            String regexBody = Pattern.quote(this.body).replaceAll("\\*","\\\\E.*\\\\Q");
+            return incomingBody.matches(regexBody);
         }
     }
 
-    private boolean hasMatchesBodyHeader() {
+    private boolean hasBodyMatchWildcard() {
         for (String headerName : headers.keySet()) {
-            if (headerName.equalsIgnoreCase(Constants.HEADER_MATCHES_BODY)) {
+            if (headerName.equalsIgnoreCase(Constants.HEADER_BODY_MATCH)) {
                 return true;
             }
         }
@@ -123,18 +127,6 @@ public class Request {
 
     public String getMethod() {
         return method;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public Map<String, String> getQueryParams() {
-        return queryParams;
-    }
-
-    public String getBody() {
-        return body;
     }
 
     @Override

@@ -82,6 +82,20 @@ Expires: Sun, 25 Sep 2016 17:00:23 GMT
 Content-Type: application/json;charset=UTF-8
 Server: Apache-Coyote/1.1
 
+POST /service/user/wildcard2 HTTP/1.1
+connection: Keep-Alive
+host: localhost:9080
+authorization: BEARER nYnQbp7iI5hmNZxd6-q4mg
+X-Ditto-BodyMatchWildcard:
+
+*
+
+HTTP/1.1 200 OK
+Date: Sun, 25 Sep 2016 16:30:44 GMT
+Content-Length: 456
+Expires: Sun, 25 Sep 2016 17:00:23 GMT
+Content-Type: application/json;charset=UTF-8
+Server: Apache-Coyote/1.1
 
 
 PUT /service/user HTTP/1.1

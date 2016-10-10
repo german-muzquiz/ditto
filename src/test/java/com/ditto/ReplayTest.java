@@ -99,6 +99,19 @@ public class ReplayTest {
     }
 
     @Test
+    public void testPostWildcardAll() {
+        given()
+                .body("{\r\n" +
+                        "    \"operation\":\"SET\",\r\n" +
+                        "    \"id\": 3\r\n" +
+                        "}\r\n")
+                .when()
+                .post("/service/user/wildcard2")
+                .then()
+                .statusCode(200);
+    }
+
+    @Test
     public void testPut() {
         given()
                 .body("{\"operation\":\"GET\"}")

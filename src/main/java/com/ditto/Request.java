@@ -110,8 +110,8 @@ public class Request {
             return this.body.equals(req.body().trim());
 
         } else {
-            String incomingBody = req.body().trim();
-            String regexBody = Pattern.quote(this.body).replaceAll("\\*","\\\\E.*\\\\Q");
+            String incomingBody = req.body().trim().replaceAll("\\r", "").replaceAll("\\n", "");
+            String regexBody = Pattern.quote(this.body.replaceAll("\\r", "").replaceAll("\\n", "")).replaceAll("\\*","\\\\E.*\\\\Q");
             return incomingBody.matches(regexBody);
         }
     }
